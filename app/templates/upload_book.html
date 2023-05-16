@@ -1,0 +1,29 @@
+<html>
+    <head>
+        <title>Book Info Form</title>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    </head>
+    <body>
+        <h1>Book Info Form</h1>
+        <form method="POST" enctype="multipart/form-data" action="/add_books/">
+            <label for="title">Book name:</label>
+            <input type="text" name="title" required><br><br>
+
+            <label for="authors">Select an author:</label>
+            <select id="1" name="authors">
+            {% for author in authors %}
+                <option value="{{ author.id }}">{{ author.name }}</option>
+            {% endfor %}
+            </select><br><br>
+
+            <label for="description">Description:</label>
+            <input type="text" name="description" required><br><br>
+
+            <label for="photo">Photo:</label>
+            <input type="file" name="photo" accept="image/*"><br><br>
+
+            <input type="submit" value="Submit">
+        </form>
+    </body>
+</html>

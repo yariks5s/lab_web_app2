@@ -1,0 +1,21 @@
+<html>
+    <head>
+        <title>Author Info Form</title>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    </head>
+    <body>
+        <h1>Author Info Form</h1>
+        <form method="POST" enctype="multipart/form-data" action="/add_author/">
+            <label for="author_name">Author name:</label>
+            <input type="text" name="name" required><br><br>
+            <label for="author_desc">City:</label>
+            <input type="text" name="city" required><br><br>
+            <label for="author_desc">Description:</label>
+            <input type="text" name="desc" required><br><br>
+            <label for="photo">Photo:</label>
+            <input type="file" name="photo" accept="image/*"><br><br>
+            <input type="submit" value="Submit">
+        </form>
+    </body>
+</html>
