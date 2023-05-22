@@ -8,7 +8,7 @@ load_dotenv()
 
 import os
 
-engine = create_engine(f'mysql+mysqlconnector://root:password@172.23.0.2/lab2')
+engine = create_engine(f'mysql+mysqlconnector://root:password@172.26.0.2/lab2')
 
 meta = MetaData()
 

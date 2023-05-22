@@ -1,22 +1,26 @@
 <html>
     <head>
-        <title>User Info Form</title>
+        <title>Comment Info Form</title>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
     </head>
     <body>
-        <h1>Chapter Info Form</h1>
+        <h1>Comment Info Form</h1>
         <a href="/show_all">Return to home</a>
-        <form method="POST" enctype="multipart/form-data" action="/add_chapter/">
-            <label for="books">Select a book:</label>
+        <form method="POST" enctype="multipart/form-data" action="/add_comment/">
+            <label for="books">Select book:</label>
             <select id="books" name="books">
             {% for book in books %}
                 <option value="{{ book.id }}">{{ book.title }}</option>
             {% endfor %}
             </select><br><br>
 
-            <label for="title">Title:</label>
-            <input type="text" name="title" required><br><br>
+            <label for="users">Select user:</label>
+            <select id="users" name="users">
+            {% for user in users %}
+                <option value="{{ user.id }}">{{ user.username }}</option>
+            {% endfor %}
+            </select><br><br>
 
             <label for="context">Context:</label>
             <input type="text" name="context" required><br><br>
