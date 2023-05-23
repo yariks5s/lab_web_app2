@@ -6,13 +6,12 @@
     </head>
     <body>
         <h1>User Info Form</h1>
+        <a href="/show_all">Return to home</a>
         <form method="POST" enctype="multipart/form-data" action="/add_user/">
             <label for="username">Username:</label>
             <input type="text" name="username" required><br><br>
             <label for="email">Email:</label>
             <input type="email" name="email" required><br><br>
-            <label for="photo">Photo:</label>
-            <input type="file" name="photo" accept="image/*"><br><br>
             <input type="submit" value="Submit">
         </form>
     </body>
