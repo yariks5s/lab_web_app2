@@ -66,23 +66,37 @@ async def show_all(request: Request):
 # region Easy_queries
 @app.post("/exec_query1/")
 async def exec_query(request: Request, query1: str = Form('query1')):
-    query = "SELECT * FROM users JOIN comments ON users.id = comments.user_id JOIN books ON comments.book_id = books.id " \
+    query = "SELECT DISTINCT users.id, users.username, users.email " \
+            "FROM users " \
+            "JOIN comments ON users.id = comments.user_id " \
+            "JOIN books ON comments.book_id = books.id " \
             "JOIN authors ON books.author_id = authors.id " \
             "WHERE authors.name = %s"
-    result = con.execute(query, (query1, ))
+    result = con.execute(query, (query1,))
     rows = result.fetchall()
     return templates.TemplateResponse("query_output.html", {"request": request, "rows": rows})
 
 @app.post("/exec_query2/")
 async def exec_query2(request: Request, query2: str = Form('query2')):
-    query = "SELECT c.title FROM chapters c JOIN books b ON c.book_id = b.id WHERE b.author = %s;"
+    query = "SELECT c.title " \
+            "FROM chapters c " \
+            "JOIN books b " \
+            "ON c.book_id = b.id " \
+            "JOIN authors a " \
+            "ON b.author_id = a.id " \
+            "WHERE a.name = %s;"
     result = con.execute(query, (query2, ))
     rows = result.fetchall()
     return templates.TemplateResponse("query_output.html", {"request": request, "rows": rows})
 
 @app.post("/exec_query3/")
 async def exec_query3(request: Request, query3: str = Form('query3')):
-    query = "SELECT b.title FROM books b JOIN comments c ON c.book_id = b.id JOIN users u ON c.user_id = u.id " \
+    query = "SELECT distinct b.id, b.title " \
+            "FROM books b " \
+            "JOIN comments c " \
+            "ON c.book_id = b.id " \
+            "JOIN users u " \
+            "ON c.user_id = u.id " \
             "WHERE u.username = %s;"
     result = con.execute(query, (query3, ))
     rows = result.fetchall()
@@ -90,14 +104,28 @@ async def exec_query3(request: Request, query3: str = Form('query3')):
 
 @app.post("/exec_query4/")
 async def exec_query4(request: Request, query4: str = Form('query4')):
-    query = "SELECT DISTINCT a.city FROM authors a JOIN books b ON a.author_id = b.id JOIN chapters c ON b.book_id = c.id WHERE c.title = %s;"
+    query = "SELECT a.city " \
+            "FROM authors a " \
+            "JOIN books b " \
+            "ON b.author_id = a.id " \
+            "JOIN comments c " \
+            "ON c.book_id = b.id " \
+            "WHERE c.text = %s;"
     result = con.execute(query, (query4, ))
     rows = result.fetchall()
     return templates.TemplateResponse("query_output.html", {"request": request, "rows": rows})
 
 @app.post("/exec_query5/")
 async def exec_query5(request: Request, query5: str = Form('query5'), query51: str = Form('query5.1')):
-    query = "SELECT b.title FROM books b JOIN authors a ON b.author_id = a.id JOIN comments c ON b.id = c.book_id JOIN users u ON c.user_id = u.id WHERE u.username = %s AND a.name = %s;"
+    query = "SELECT b.title " \
+            "FROM books b " \
+            "JOIN authors a " \
+            "ON b.author_id = a.id " \
+            "JOIN comments c " \
+            "ON b.id = c.book_id " \
+            "JOIN users u " \
+            "ON c.user_id = u.id " \
+            "WHERE u.username = %s AND a.name = %s;"
     result = con.execute(query, (query5, query51, ))
     rows = result.fetchall()
     return templates.TemplateResponse("query_output.html", {"request": request, "rows": rows})
@@ -106,21 +134,55 @@ async def exec_query5(request: Request, query5: str = Form('query5'), query51: s
 # region Hard_queries
 @app.post("/exec_query6/")
 async def exec_query6(request: Request, query6: str = Form('query6')):
-    query = "SELECT * FROM users u JOIN comments c ON u.id = c.user_id JOIN books b ON c.book_id = b.id WHERE u.username <> %s AND b.id IN (SELECT c2.book_id FROM comments c2 JOIN users u2 ON c2.user_id = u2.id WHERE u2.username = %s);"
+    query = "SELECT DISTINCT u.id, u.username, u.email " \
+            "FROM users u " \
+            "JOIN comments c ON u.id = c.user_id " \
+            "JOIN books b ON c.book_id = b.id " \
+            "WHERE u.username <> %s AND b.id IN " \
+            "(SELECT c2.book_id " \
+            "FROM comments c2 " \
+            "JOIN users u2 ON c2.user_id = u2.id " \
+            "WHERE u2.username = %s);"
     result = con.execute(query, (query6, query6,))
     rows = result.fetchall()
     return templates.TemplateResponse("query_output.html", {"request": request, "rows": rows})
 
 @app.post("/exec_query7/")
 async def exec_query7(request: Request, query7: str = Form('query7')):
-    query = "SELECT distinct(u.username) FROM users u JOIN comments c ON u.id = c.user_id JOIN books b ON c.book_id = b.id JOIN authors a ON b.author_id = a.id WHERE lower(a.city) = lower(%s) AND NOT EXISTS (SELECT 1 FROM books b2 JOIN authors a2 ON b2.author_id = a2.id WHERE lower(a2.city) = lower(%s) AND NOT EXISTS (SELECT 1 FROM comments c2 WHERE c2.user_id = u.id AND c2.book_id = b2.id));"
-    result = con.execute(query, (query7, query7,))
+    query = """
+    SELECT DISTINCT u.username
+    FROM users u
+    JOIN comments c ON c.user_id = u.id
+    JOIN books b ON b.id = c.book_id
+    JOIN authors a ON a.id = b.author_id
+    WHERE lower(a.city) = lower(%s)
+    AND NOT EXISTS (
+        SELECT 1
+        FROM books b2
+        JOIN authors a2 ON b2.author_id = a2.id
+        WHERE lower(a2.city) = lower(%s)
+        AND NOT EXISTS (
+            SELECT 1
+            FROM comments c2
+            WHERE c2.user_id = u.id AND c2.book_id = b2.id
+        )
+    )
+    """
+    result = con.execute(query, (query7, query7))
     rows = result.fetchall()
     return templates.TemplateResponse("query_output.html", {"request": request, "rows": rows})
 
 @app.post("/exec_query8/")
 async def exec_query8(request: Request, query8: str = Form('query8')):
-    query = "SELECT distinct users.* FROM users, books b WHERE NOT EXISTS (SELECT 1 FROM users u WHERE NOT EXISTS (SELECT 1 FROM comments c WHERE c.user_id = u.id AND c.book_id = %s));"
+    query = "SELECT DISTINCT users.id, users.username, users.email " \
+            "FROM users, books b " \
+            "WHERE NOT EXISTS " \
+            "(SELECT 1 " \
+            "FROM users u " \
+            "WHERE NOT EXISTS " \
+            "(SELECT 1 " \
+            "FROM comments c " \
+            "WHERE c.user_id = u.id AND c.book_id = %s));"
     result = con.execute(query, (query8,))
     rows = result.fetchall()
     return templates.TemplateResponse("query_output.html", {"request": request, "rows": rows})
@@ -129,7 +191,7 @@ async def exec_query8(request: Request, query8: str = Form('query8')):
 
 # region Create Book
 @app.post("/add_books/")
-async def submit_form(title: str = Form('title'), authors: str = Form('authors'), description: str = Form('description')
+async def submit_form(request: Request, title: str = Form('title'), authors: str = Form('authors'), description: str = Form('description')
                       , photo: UploadFile = File(None)):
     query = con.execute("SELECT id FROM authors WHERE id = %s", (authors,))
     author = query.fetchone()[0]  # extract id from dictionary
@@ -181,7 +243,7 @@ async def submit_form(title: str = Form('title'), authors: str = Form('authors')
         except Exception as e:
             return {"message": "Error processing photo: {}".format(e)}
 
-    return {"message": "Form submitted successfully."}
+    return templates.TemplateResponse("transfer.html", {"request": request})
 
 @app.get("/upload_book/")
 async def form(request: Request):
@@ -191,7 +253,7 @@ async def form(request: Request):
     return templates.TemplateResponse("upload_book.html", {"request": request, **context})
 
 @app.post('/books/{book_id}')
-def update_book(book_id: int, title: str = Form('title'), authors: str = Form('authors'), description: str = Form('description')):
+def update_book(request: Request, book_id: int, title: str = Form('title'), authors: str = Form('authors'), description: str = Form('description')):
     # Update the book fields with the received data
     query = con.execute("SELECT id FROM authors WHERE id = %s", (authors,))
     author = query.fetchone()[0]
@@ -205,7 +267,7 @@ def update_book(book_id: int, title: str = Form('title'), authors: str = Form('a
         )
     )
 
-    return {'message': 'Book updated successfully'}
+    return templates.TemplateResponse("transfer.html", {"request": request})
 
 @app.get("/update_book_form/{book_id}", response_class=HTMLResponse)
 def update_book_form(request: Request, book_id: int):
@@ -222,16 +284,18 @@ def update_book_form(request: Request, book_id: int):
         "update_book_form.html", {"request": request, "book": book, "authors": author_list}
     )
 
-@app.post("/delete_book/{book_id}", response_class=HTMLResponse)
+@app.get("/delete_book/{book_id}", response_class=HTMLResponse)
 def delete_book(book_id: int, request: Request):
     # Delete the book from the database
+    con.execute(chapters.delete().where(chapters.c.book_id == book_id))
+    con.execute(comments.delete().where(comments.c.book_id == book_id))
     con.execute(books.delete().where(books.c.id == book_id))
     return templates.TemplateResponse("transfer.html", {"request": request})
 # endregion
 
 # region Create Chapter
 @app.post("/add_chapter/")
-async def submit_form(books: str = Form('books'), title: str = Form('title'), context: str = Form('context')):
+async def submit_form(request: Request, books: str = Form('books'), title: str = Form('title'), context: str = Form('context')):
     query = con.execute("SELECT id FROM books WHERE id = %s", (books,))
     book = query.fetchone()[0]  # extract id from dictionary
     data = con.execute(chapters.insert().values(
@@ -239,7 +303,7 @@ async def submit_form(books: str = Form('books'), title: str = Form('title'), co
         context=context,
         book_id=book,
     ))
-    return {"message": "Form submitted successfully."}
+    return templates.TemplateResponse("transfer.html", {"request": request})
 
 @app.get("/upload_chapter/", response_class=HTMLResponse)
 async def form(request: Request):
@@ -249,7 +313,7 @@ async def form(request: Request):
     return templates.TemplateResponse("upload_chapter.html", {"request": request, **context})
 
 @app.post('/chapters/{chapter_id}')
-def update_book(chapter_id: int, title: str = Form('title'), books: str = Form('books'), context: str = Form('context')):
+def update_book(request: Request, chapter_id: int, title: str = Form('title'), books: str = Form('books'), context: str = Form('context')):
     # Update the book fields with the received data
     query = con.execute("SELECT id FROM books WHERE id = %s", (books,))
     book = query.fetchone()[0]
@@ -263,7 +327,7 @@ def update_book(chapter_id: int, title: str = Form('title'), books: str = Form('
         )
     )
 
-    return {'message': 'Chapter updated successfully'}
+    return templates.TemplateResponse("transfer.html", {"request": request})
 
 @app.get("/update_chapter_form/{chapter_id}", response_class=HTMLResponse)
 def update_chapter_form(request: Request, chapter_id: int):
@@ -289,7 +353,7 @@ def delete_chapter(chapter_id: int, request: Request):
 
 # region Create Author
 @app.post("/add_author/")
-async def submit_form(name: str = Form('name'), city: str = Form('city'), description: str = Form('desc'),
+async def submit_form(request: Request, name: str = Form('name'), city: str = Form('city'), description: str = Form('desc'),
                       photo: UploadFile = File(None)):
     if photo is not None and photo.content_type.split("/")[0] == "image":
         try:
@@ -338,14 +402,14 @@ async def submit_form(name: str = Form('name'), city: str = Form('city'), descri
         except Exception as e:
             return {"message": "Error processing photo: {}".format(e)}
 
-    return {"message": "Form submitted successfully."}
+    return templates.TemplateResponse("transfer.html", {"request": request})
 
 @app.get("/upload_author/")
 async def form():
     return FileResponse("templates/upload_author.html")
 
 @app.post('/authors/{author_id}')
-def update_book(author_id: int, name: str = Form('name'), city: str = Form('city'), description: str = Form('description')):
+def update_book(request: Request, author_id: int, name: str = Form('name'), city: str = Form('city'), description: str = Form('description')):
     con.execute(
         authors.update()
         .where(authors.c.id == author_id)
@@ -356,7 +420,7 @@ def update_book(author_id: int, name: str = Form('name'), city: str = Form('city
         )
     )
 
-    return {'message': 'Author updated successfully'}
+    return templates.TemplateResponse("transfer.html", {"request": request})
 
 @app.get("/update_author_form/{author_id}", response_class=HTMLResponse)
 def update_author_form(request: Request, author_id: int):
@@ -373,14 +437,22 @@ def update_author_form(request: Request, author_id: int):
 
 @app.get("/delete_author/{author_id}", response_class=HTMLResponse)
 def delete_author(author_id: int, request: Request):
-    # Delete the book from the database
+    # Delete the author and related rows from the database
+    # Delete related rows from the books table
+    b_ids = con.execute(select([books.c.id]).where(books.c.author_id == author_id))
+    b_ids = b_ids.fetchall()
+    for b in b_ids:
+        con.execute(comments.delete().where(comments.c.book_id == b[0]))
+        con.execute(chapters.delete().where(chapters.c.book_id == b[0]))
+    con.execute(books.delete().where(books.c.author_id == author_id))
     con.execute(authors.delete().where(authors.c.id == author_id))
     return templates.TemplateResponse("transfer.html", {"request": request})
+
 # endregion
 
 # region Create User
 @app.post("/add_user/")
-async def submit_form(username: str = Form('username'), email: str = Form('email'), photo: UploadFile = File(None)):
+async def submit_form(request: Request, username: str = Form('username'), email: str = Form('email'), photo: UploadFile = File(None)):
     if photo is not None and photo.content_type.split("/")[0] == "image":
         try:
             with Image.open(photo.file) as img:
@@ -426,14 +498,14 @@ async def submit_form(username: str = Form('username'), email: str = Form('email
         except Exception as e:
             return {"message": "Error processing photo: {}".format(e)}
 
-    return {"message": "Form submitted successfully."}
+    return templates.TemplateResponse("transfer.html", {"request": request})
 
 @app.get("/upload_user/")
 async def form():
     return FileResponse("templates/upload_user.html")
 
 @app.post('/users/{user_id}')
-def update_book(user_id: int, username: str = Form('username'), email: str = Form('email'),):
+def update_book(request: Request, user_id: int, username: str = Form('username'), email: str = Form('email'),):
     con.execute(
         users.update()
         .where(users.c.id == user_id)
@@ -443,7 +515,7 @@ def update_book(user_id: int, username: str = Form('username'), email: str = For
         )
     )
 
-    return {'message': 'User updated successfully'}
+    return templates.TemplateResponse("transfer.html", {"request": request})
 
 @app.get("/update_user_form/{user_id}", response_class=HTMLResponse)
 def update_user_form(request: Request, user_id: int):
@@ -461,6 +533,7 @@ def update_user_form(request: Request, user_id: int):
 @app.get("/delete_user/{user_id}", response_class=HTMLResponse)
 def delete_user(user_id: int, request: Request):
     # Delete the book from the database
+    con.execute(comments.delete().where(comments.c.user_id == user_id))
     con.execute(users.delete().where(users.c.id == user_id))
     return templates.TemplateResponse("transfer.html", {"request": request})
 # endregion
@@ -468,7 +541,7 @@ def delete_user(user_id: int, request: Request):
 # region Create Comment
 
 @app.post("/add_comment/")
-async def submit_form(books: str = Form('books'), users: str = Form('users'), title: str = Form('title'), context: str = Form('context')):
+async def submit_form(request: Request, books: str = Form('books'), users: str = Form('users'), title: str = Form('title'), context: str = Form('context')):
     query = con.execute("SELECT id FROM books WHERE id = %s", (books,))
     book = query.fetchone()[0]  # extract id from dictionary
     query = con.execute("SELECT id FROM users WHERE id = %s", (users,))
@@ -478,7 +551,7 @@ async def submit_form(books: str = Form('books'), users: str = Form('users'), ti
         book_id=book,
         user_id=user,
     ))
-    return {"message": "Form submitted successfully."}
+    return templates.TemplateResponse("transfer.html", {"request": request})
 
 @app.get("/upload_comment/")
 async def form(request: Request):
@@ -490,7 +563,7 @@ async def form(request: Request):
     return templates.TemplateResponse("upload_comment.html", {"request": request, **context})
 
 @app.post('/comments/{comment_id}')
-def update_book(comment_id: int, text: str = Form('text'), books: str = Form('books'), users: str = Form('users')):
+def update_book(request: Request, comment_id: int, text: str = Form('text'), books: str = Form('books'), users: str = Form('users')):
     # Update the book fields with the received data
     query = con.execute("SELECT id FROM books WHERE id = %s", (books,))
     book = query.fetchone()[0]
@@ -506,7 +579,7 @@ def update_book(comment_id: int, text: str = Form('text'), books: str = Form('bo
         )
     )
 
-    return {'message': 'Comment updated successfully'}
+    return templates.TemplateResponse("transfer.html", {"request": request})
 
 @app.get("/update_comment_form/{comment_id}", response_class=HTMLResponse)
 def update_comment_form(request: Request, comment_id: int):
@@ -535,7 +608,7 @@ def delete_comment(comment_id: int, request: Request):
 
 # region Create data to test
 @app.get("/test_data/")
-async def test_data():
+async def test_data(request: Request):
     try:
         with Image.open("templates/static/img/default_user.png") as img:
             # Resize the photo to a maximum width and height of 800 pixels
@@ -596,7 +669,7 @@ async def test_data():
             book_id=book,
             user_id=user,
         ))
-    return {"message": "Test data inserted successfully."}
+    return templates.TemplateResponse("transfer.html", {"request": request})
 
 # endregion
 

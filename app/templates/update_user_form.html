@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Update User</title>
+</head>
+<body>
+    <h1>Update User</h1>
+    <a href="/show_all">Return to home</a>
+    <form action="/users/{{ user.id }}" method="POST">
+        <label for="username">Name:</label>
+        <input type="text" id="username" name="username" value="{{ user.username }}"><br><br>
+
+        <label for="email">Email:</label>
+        <input id="email" name="email" value="{{ user.email }}"><br><br>
+
+        <input type="submit" value="Update">
+    </form>
+</body>
+</html>

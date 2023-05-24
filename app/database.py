@@ -33,7 +33,7 @@ books = Table("books", metadata,
               Column("title", String(50)),
               Column("description", String(500)),
               Column("photo", BLOB),
-              Column("author_id", Integer, ForeignKey("authors.id")),
+              Column("author_id", Integer, ForeignKey("authors.id", ondelete="CASCADE")),
               )
 
 authors = Table("authors", metadata,
@@ -48,14 +48,14 @@ chapters = Table("chapters", metadata,
                  Column("id", Integer, primary_key=True),
                  Column("title", String(50)),
                  Column("context", String(500)),
-                 Column("book_id", Integer, ForeignKey("books.id")),
+                 Column("book_id", Integer, ForeignKey("books.id", ondelete="CASCADE")),
                  )
 
 comments = Table("comments", metadata,
                  Column("id", Integer, primary_key=True),
                  Column("text", String(500)),
-                 Column("user_id", Integer, ForeignKey("users.id")),
-                 Column("book_id", Integer, ForeignKey("books.id")),
+                 Column("user_id", Integer, ForeignKey("users.id", ondelete="CASCADE")),
+                 Column("book_id", Integer, ForeignKey("books.id", ondelete="CASCADE")),
                  )
 
 
